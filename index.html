@@ -1,1 +1,670 @@
-<h1>Hello</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EntityLootDrops - NBT Converter</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <div class="logo">
+        <img src="logo.png" alt="EntityLootDrops Logo">
+      </div>
+      <h1>EntityLootDrops</h1>
+      <p class="subtitle">NBT Command → Item JSON Converter</p>
+      <span class="mod-badge">
+  <img src="logo_poe.png" alt="Icon" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 5px;">
+  Created By Poe
+</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('editor')">
+      <span style="position: relative; z-index: 1;">✨ Visual Editor</span>
+    </div>
+    <div class="tab" onclick="switchTab('manual')">
+      <span style="position: relative; z-index: 1;">⌨️ Manual Input</span>
+    </div>
+  </div>
+
+  <!-- Visual Editor Tab -->
+  <div id="editor-tab" class="tab-content active">
+    <div class="card">
+      <h2 class="section-title">Item Properties</h2>
+
+      <!-- Display Name -->
+      <div class="form-group">
+        <label>Display Name</label>
+        <div class="text-editor" id="nameEditor">
+          <div class="editor-toolbar">
+            <div class="color-picker-wrapper" id="nameColorPicker"></div>
+            <div class="custom-color-picker">
+              <label>Custom:</label>
+              <input type="color" id="nameCustomColor" value="#FFFFFF" onchange="selectCustomColor('name', this.value)">
+            </div>
+            <button class="format-btn" data-format="bold" onclick="toggleFormat('name', 'bold')">B</button>
+            <button class="format-btn" data-format="italic" onclick="toggleFormat('name', 'italic')">I</button>
+            <button class="format-btn" data-format="underline" onclick="toggleFormat('name', 'underline')">U</button>
+            <button class="format-btn" data-format="strikethrough" onclick="toggleFormat('name', 'strikethrough')">S</button>
+            <button class="format-btn" data-format="obfuscated" onclick="toggleFormat('name', 'obfuscated')">?</button>
+          </div>
+          <input type="text" class="editor-input" id="nameInput" placeholder="Enter item name..." oninput="updatePreview('name')">
+          <div class="editor-preview" id="namePreview">Preview will appear here...</div>
+        </div>
+      </div>
+
+      <!-- Lore -->
+      <div class="form-group">
+        <label>Lore Lines</label>
+        <div class="lore-list" id="loreList"></div>
+        <button class="secondary small" onclick="addLoreLine()" style="margin-top: 10px; width: auto;">
+          <span style="position: relative; z-index: 1;">+ Add Lore Line</span>
+        </button>
+      </div>
+
+      <!-- Enchantments -->
+      <div class="form-group">
+        <label>Enchantments</label>
+        <div class="enchantment-list" id="enchantmentList"></div>
+        <button class="secondary small" onclick="addEnchantment()" style="margin-top: 10px; width: auto;">
+          <span style="position: relative; z-index: 1;">+ Add Enchantment</span>
+        </button>
+      </div>
+
+      <!-- Additional Properties -->
+      <div class="form-group">
+        <label for="customModelData">Custom Model Data (Optional)</label>
+        <input type="number" id="customModelData" placeholder="e.g., 1234">
+      </div>
+
+      <div class="form-group">
+        <label for="unbreakable">Unbreakable</label>
+        <select id="unbreakable">
+          <option value="">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+
+      <!-- Generate Button -->
+      <div class="button-group">
+        <button onclick="generateFromEditor()">
+          <span style="position: relative; z-index: 1;">🔨 Generate NBT</span>
+        </button>
+        <button class="secondary" onclick="clearEditor()">
+          <span style="position: relative; z-index: 1;">🗑️ Clear Editor</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Input Tab -->
+  <div id="manual-tab" class="tab-content">
+    <div class="card">
+      <h2 class="section-title">Input NBT Command</h2>
+      <p style="color: #aaa; margin-bottom: 15px; font-size: 0.95rem;">
+        Paste your NBT data from a Minecraft command below:
+      </p>
+      <textarea
+              id="input"
+              placeholder='{display:{Name:"[{\"text\":\"Ghost Tear\",\"color\":\"white\"}]"},Enchantments:[{id:"minecraft:sharpness",lvl:5s}]}'
+              spellcheck="false"
+      ></textarea>
+
+      <div class="button-group">
+        <button onclick="convert()">
+          <span style="position: relative; z-index: 1;">🔄 Convert</span>
+        </button>
+        <button class="secondary" onclick="clearAll()">
+          <span style="position: relative; z-index: 1;">🗑️ Clear</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output Section -->
+  <div class="card">
+    <h2 class="section-title">Converted JSON Output</h2>
+    <pre id="output">// Your converted JSON will appear here...</pre>
+    <div class="button-group">
+      <button class="secondary" onclick="copyOutput()">
+        <span style="position: relative; z-index: 1;">📋 Copy Output</span>
+      </button>
+    </div>
+    <div class="message" id="copyMsg">✅ Successfully copied to clipboard!</div>
+  </div>
+
+  <!-- Info Section -->
+  <div class="info-section">
+    <h3>📖 How to Use</h3>
+    <p>
+      <strong>Visual Editor Mode:</strong><br>
+      1. Use the text editor to format your item name with colors and styles<br>
+      2. Click preset colors or use the custom color picker for hex colors<br>
+      3. Add lore lines with individual formatting for each line<br>
+      4. Add enchantments using the dropdown menus<br>
+      5. Click <strong>Generate NBT</strong> to create the NBT data<br><br>
+
+      <strong>Manual Input Mode:</strong><br>
+      1. Copy NBT data from your Minecraft command (the part inside curly braces)<br>
+      2. Paste it into the input field<br>
+      3. Click <strong>Convert</strong> to transform it into mod-compatible JSON format<br><br>
+
+      4. Use <strong>Copy Output</strong> to copy the result to your clipboard
+    </p>
+  </div>
+</div>
+
+<script>
+  // Minecraft enchantments list
+  const enchantments = [
+    'minecraft:protection',
+    'minecraft:fire_protection',
+    'minecraft:feather_falling',
+    'minecraft:blast_protection',
+    'minecraft:projectile_protection',
+    'minecraft:respiration',
+    'minecraft:aqua_affinity',
+    'minecraft:thorns',
+    'minecraft:depth_strider',
+    'minecraft:frost_walker',
+    'minecraft:binding_curse',
+    'minecraft:soul_speed',
+    'minecraft:sharpness',
+    'minecraft:smite',
+    'minecraft:bane_of_arthropods',
+    'minecraft:knockback',
+    'minecraft:fire_aspect',
+    'minecraft:looting',
+    'minecraft:sweeping',
+    'minecraft:efficiency',
+    'minecraft:silk_touch',
+    'minecraft:unbreaking',
+    'minecraft:fortune',
+    'minecraft:power',
+    'minecraft:punch',
+    'minecraft:flame',
+    'minecraft:infinity',
+    'minecraft:luck_of_the_sea',
+    'minecraft:lure',
+    'minecraft:loyalty',
+    'minecraft:impaling',
+    'minecraft:riptide',
+    'minecraft:channeling',
+    'minecraft:multishot',
+    'minecraft:quick_charge',
+    'minecraft:piercing',
+    'minecraft:mending',
+    'minecraft:vanishing_curse'
+  ];
+
+  // Minecraft colors
+  const minecraftColors = {
+    'black': '#000000',
+    'dark_blue': '#0000AA',
+    'dark_green': '#00AA00',
+    'dark_aqua': '#00AAAA',
+    'dark_red': '#AA0000',
+    'dark_purple': '#AA00AA',
+    'gold': '#FFAA00',
+    'gray': '#AAAAAA',
+    'dark_gray': '#555555',
+    'blue': '#5555FF',
+    'green': '#55FF55',
+    'aqua': '#55FFFF',
+    'red': '#FF5555',
+    'light_purple': '#FF55FF',
+    'yellow': '#FFFF55',
+    'white': '#FFFFFF'
+  };
+
+  let enchantmentCount = 0;
+  let loreCount = 0;
+
+  // Text formatting state
+  const textState = {
+    name: { color: 'white', customColor: null, bold: false, italic: false, underline: false, strikethrough: false, obfuscated: false },
+    lore: {}
+  };
+
+  // Initialize color pickers
+  function initColorPicker(containerId, type, id = null) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    Object.entries(minecraftColors).forEach(([name, hex]) => {
+      const btn = document.createElement('div');
+      btn.className = 'color-btn';
+      btn.style.background = hex;
+      btn.title = name.replace(/_/g, ' ');
+      btn.onclick = () => selectColor(type, name, id);
+
+      const state = id === null ? textState[type] : textState[type][id];
+      if (state && state.color === name && !state.customColor) {
+        btn.classList.add('active');
+      }
+
+      container.appendChild(btn);
+    });
+  }
+
+  // Select color
+  function selectColor(type, color, id = null) {
+    if (id === null) {
+      textState[type].color = color;
+      textState[type].customColor = null;
+      initColorPicker(type + 'ColorPicker', type);
+      updatePreview(type);
+    } else {
+      if (!textState[type][id]) {
+        textState[type][id] = { color: 'gray', customColor: null, bold: false, italic: false, underline: false, strikethrough: false, obfuscated: false };
+      }
+      textState[type][id].color = color;
+      textState[type][id].customColor = null;
+      initColorPicker(`loreColorPicker-${id}`, type, id);
+      updatePreview(type, id);
+    }
+  }
+
+  // Select custom color
+  function selectCustomColor(type, hexColor, id = null) {
+    if (id === null) {
+      textState[type].customColor = hexColor;
+      textState[type].color = null;
+      // Remove active class from preset colors
+      document.querySelectorAll(`#${type}ColorPicker .color-btn`).forEach(btn => btn.classList.remove('active'));
+      updatePreview(type);
+    } else {
+      if (!textState[type][id]) {
+        textState[type][id] = { color: 'gray', customColor: null, bold: false, italic: false, underline: false, strikethrough: false, obfuscated: false };
+      }
+      textState[type][id].customColor = hexColor;
+      textState[type][id].color = null;
+      // Remove active class from preset colors
+      document.querySelectorAll(`#loreColorPicker-${id} .color-btn`).forEach(btn => btn.classList.remove('active'));
+      updatePreview(type, id);
+    }
+  }
+
+  // Toggle format
+  function toggleFormat(type, format, id = null) {
+    if (id === null) {
+      textState[type][format] = !textState[type][format];
+      const btn = document.querySelector(`#${type}Editor .format-btn[data-format="${format}"]`);
+      btn.classList.toggle('active');
+      updatePreview(type);
+    } else {
+      if (!textState[type][id]) {
+        textState[type][id] = { color: 'gray', customColor: null, bold: false, italic: false, underline: false, strikethrough: false, obfuscated: false };
+      }
+      textState[type][id][format] = !textState[type][id][format];
+      const btn = document.querySelector(`#lore-${id} .format-btn[data-format="${format}"]`);
+      btn.classList.toggle('active');
+      updatePreview(type, id);
+    }
+  }
+
+  // Update preview
+  function updatePreview(type, id = null) {
+    if (id === null) {
+      const input = document.getElementById(type + 'Input').value;
+      const preview = document.getElementById(type + 'Preview');
+      const state = textState[type];
+
+      if (!input) {
+        preview.textContent = 'Preview will appear here...';
+        preview.style.color = '#666';
+        return;
+      }
+
+      // Determine color
+      let colorValue;
+      if (state.customColor) {
+        colorValue = state.customColor;
+      } else {
+        colorValue = minecraftColors[state.color];
+      }
+
+      let classes = [];
+      if (state.bold) classes.push('mc-bold');
+      if (state.italic) classes.push('mc-italic');
+      if (state.underline) classes.push('mc-underline');
+      if (state.strikethrough) classes.push('mc-strikethrough');
+      if (state.obfuscated) classes.push('mc-obfuscated');
+
+      preview.className = 'editor-preview ' + classes.join(' ');
+      preview.textContent = input;
+      preview.style.color = colorValue;
+      preview.style.textShadow = `2px 2px 0px ${adjustBrightness(colorValue, -0.6)}`;
+    } else {
+      const input = document.getElementById(`loreInput-${id}`).value;
+      const preview = document.getElementById(`lorePreview-${id}`);
+      const state = textState[type][id];
+
+      if (!input) {
+        preview.textContent = 'Preview will appear here...';
+        preview.style.color = '#666';
+        return;
+      }
+
+      // Determine color
+      let colorValue;
+      if (state.customColor) {
+        colorValue = state.customColor;
+      } else {
+        colorValue = minecraftColors[state.color];
+      }
+
+      let classes = [];
+      if (state.bold) classes.push('mc-bold');
+      if (state.italic) classes.push('mc-italic');
+      if (state.underline) classes.push('mc-underline');
+      if (state.strikethrough) classes.push('mc-strikethrough');
+      if (state.obfuscated) classes.push('mc-obfuscated');
+
+      preview.className = 'editor-preview ' + classes.join(' ');
+      preview.textContent = input;
+      preview.style.color = colorValue;
+      preview.style.textShadow = `2px 2px 0px ${adjustBrightness(colorValue, -0.6)}`;
+    }
+  }
+
+  // Helper function to adjust brightness for shadow
+  function adjustBrightness(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent * 100);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+      (B < 255 ? B < 1 ? 0 : B : 255))
+      .toString(16).slice(1);
+  }
+
+  // Add enchantment
+  function addEnchantment() {
+    const list = document.getElementById('enchantmentList');
+    const id = enchantmentCount++;
+
+    const item = document.createElement('div');
+    item.className = 'enchantment-item';
+    item.innerHTML = `
+      <div class="enchantment-row">
+        <select id="enchantment-select-${id}">
+          ${enchantments.map(e => `<option value="${e}">${e.replace('minecraft:', '')}</option>`).join('')}
+        </select>
+        <input type="number" id="enchantment-level-${id}" value="1" min="1" max="255" placeholder="Level">
+        <button class="remove-btn" onclick="this.parentElement.parentElement.remove()">×</button>
+      </div>
+    `;
+    list.appendChild(item);
+  }
+
+  // Add lore line
+  function addLoreLine() {
+    const list = document.getElementById('loreList');
+    const id = loreCount++;
+
+    if (!textState.lore[id]) {
+      textState.lore[id] = { color: 'gray', customColor: null, bold: false, italic: false, underline: false, strikethrough: false, obfuscated: false };
+    }
+
+    const item = document.createElement('div');
+    item.className = 'lore-item';
+    item.id = `lore-${id}`;
+    item.innerHTML = `
+      <div class="text-editor">
+        <div class="editor-toolbar">
+          <div class="color-picker-wrapper" id="loreColorPicker-${id}"></div>
+          <div class="custom-color-picker">
+            <label>Custom:</label>
+            <input type="color" id="loreCustomColor-${id}" value="#AAAAAA" onchange="selectCustomColor('lore', this.value, ${id})">
+          </div>
+          <button class="format-btn" data-format="bold" onclick="toggleFormat('lore', 'bold', ${id})">B</button>
+          <button class="format-btn" data-format="italic" onclick="toggleFormat('lore', 'italic', ${id})">I</button>
+          <button class="format-btn" data-format="underline" onclick="toggleFormat('lore', 'underline', ${id})">U</button>
+          <button class="format-btn" data-format="strikethrough" onclick="toggleFormat('lore', 'strikethrough', ${id})">S</button>
+          <button class="format-btn" data-format="obfuscated" onclick="toggleFormat('lore', 'obfuscated', ${id})">?</button>
+          <button class="remove-btn" onclick="removeLoreLine(${id})" style="margin-left: auto;">×</button>
+        </div>
+        <input type="text" class="editor-input" id="loreInput-${id}" placeholder="Enter lore text..." oninput="updatePreview('lore', ${id})">
+        <div class="editor-preview" id="lorePreview-${id}">Preview will appear here...</div>
+      </div>
+    `;
+    list.appendChild(item);
+    initColorPicker(`loreColorPicker-${id}`, 'lore', id);
+  }
+
+  // Remove lore line
+  function removeLoreLine(id) {
+    document.getElementById(`lore-${id}`).remove();
+    delete textState.lore[id];
+  }
+
+    // Generate from editor
+  function generateFromEditor() {
+    const output = document.getElementById('output');
+
+    // Build name
+    const nameInput = document.getElementById('nameInput').value;
+    const nameState = textState.name;
+
+    let nameString = '';
+    if (nameInput) {
+      const nameObj = { text: nameInput };
+
+      // Add color
+      if (nameState.customColor) {
+        nameObj.color = nameState.customColor;
+      } else if (nameState.color) {
+        nameObj.color = nameState.color;
+      }
+
+      // Add formatting
+      if (nameState.bold) nameObj.bold = true;
+      nameObj.italic = nameState.italic ? true : false; // Always set italic
+      if (nameState.underline) nameObj.underlined = true;
+      if (nameState.strikethrough) nameObj.strikethrough = true;
+      if (nameState.obfuscated) nameObj.obfuscated = true;
+
+      // Convert to JSON and escape for NBT string (double escape for JSON)
+      const jsonStr = JSON.stringify(nameObj);
+      nameString = jsonStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
+
+    // Build lore array
+    let loreArray = [];
+    Object.keys(textState.lore).forEach(id => {
+      const input = document.getElementById(`loreInput-${id}`);
+      if (input && input.value) {
+        const state = textState.lore[id];
+        const loreObj = { text: input.value };
+
+        // Add color
+        if (state.customColor) {
+          loreObj.color = state.customColor;
+        } else if (state.color) {
+          loreObj.color = state.color;
+        }
+
+        // Add formatting
+        if (state.bold) loreObj.bold = true;
+        loreObj.italic = state.italic ? true : false; // Always set italic
+        if (state.underline) loreObj.underlined = true;
+        if (state.strikethrough) loreObj.strikethrough = true;
+        if (state.obfuscated) loreObj.obfuscated = true;
+
+        // Convert to JSON and escape for NBT string (double escape for JSON)
+        const jsonStr = JSON.stringify(loreObj);
+        const escapedStr = jsonStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        loreArray.push(`'${escapedStr}'`);
+      }
+    });
+
+    // Build enchantments array
+    let enchantArray = [];
+    document.querySelectorAll('[id^="enchantment-select-"]').forEach(select => {
+      const id = select.id.replace('enchantment-select-', '');
+      const level = document.getElementById(`enchantment-level-${id}`).value;
+      if (level) {
+        enchantArray.push(`{id:\\"${select.value}\\",lvl:${level}s}`);
+      }
+    });
+
+    // Build NBT string
+    let nbtParts = [];
+
+    if (nameString) {
+      nbtParts.push(`Name:'${nameString}'`);
+    }
+
+    if (loreArray.length > 0) {
+      nbtParts.push(`Lore:[${loreArray.join(',')}]`);
+    }
+
+    let nbtString = '';
+
+    if (nbtParts.length > 0) {
+      nbtString += `display:{${nbtParts.join(',')}}`;
+    }
+
+    if (enchantArray.length > 0) {
+      if (nbtString) nbtString += ',';
+      nbtString += `Enchantments:[${enchantArray.join(',')}]`;
+    }
+
+    // Add custom model data if provided
+    const customModelData = document.getElementById('customModelData').value;
+    if (customModelData) {
+      if (nbtString) nbtString += ',';
+      nbtString += `CustomModelData:${customModelData}`;
+    }
+
+    // Add unbreakable if selected
+    const unbreakable = document.getElementById('unbreakable').value;
+    if (unbreakable) {
+      if (nbtString) nbtString += ',';
+      nbtString += `Unbreakable:${unbreakable}b`;
+    }
+
+    if (!nbtString) {
+      showMessage('⚠️ Please fill in at least one field!', 'error');
+      return;
+    }
+
+    const finalNBT = `{${nbtString}}`;
+
+    // Output with proper JSON escaping
+    output.textContent = `"nbtData": "${finalNBT}"`;
+    showMessage('✅ NBT generated successfully!', 'success');
+  }
+
+  // Clear editor
+  function clearEditor() {
+    document.getElementById('nameInput').value = '';
+    document.getElementById('namePreview').textContent = 'Preview will appear here...';
+    document.getElementById('loreList').innerHTML = '';
+    document.getElementById('enchantmentList').innerHTML = '';
+    document.getElementById('customModelData').value = '';
+    document.getElementById('unbreakable').value = '';
+
+    textState.name = { color: 'white', customColor: null, bold: false, italic: false, underline: false, strikethrough: false, obfuscated: false };
+    textState.lore = {};
+    loreCount = 0;
+    enchantmentCount = 0;
+
+    initColorPicker('nameColorPicker', 'name');
+    document.querySelectorAll('#nameEditor .format-btn').forEach(btn => btn.classList.remove('active'));
+  }
+
+  // Switch tabs
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    if (tab === 'editor') {
+      document.querySelector('.tab:first-child').classList.add('active');
+      document.getElementById('editor-tab').classList.add('active');
+    } else {
+      document.querySelector('.tab:last-child').classList.add('active');
+      document.getElementById('manual-tab').classList.add('active');
+    }
+  }
+
+  // Convert manual input
+  function convert() {
+    const input = document.getElementById('input').value.trim();
+    const output = document.getElementById('output');
+
+    if (!input) {
+      showMessage('Please enter NBT data!', 'error');
+      return;
+    }
+
+    try {
+      output.textContent = `"nbtData": "${input}"`;
+      showMessage('Converted successfully!', 'success');
+    } catch (error) {
+      showMessage('Error: ' + error.message, 'error');
+    }
+  }
+
+  // Copy output
+  function copyOutput() {
+    const output = document.getElementById('output');
+    const text = output.textContent;
+
+    if (!text || text.includes('will appear here')) {
+      showMessage('Nothing to copy!', 'error');
+      return;
+    }
+
+    navigator.clipboard.writeText(text).then(() => {
+      showMessage('Copied to clipboard!', 'success');
+    }).catch(() => {
+      showMessage('Failed to copy!', 'error');
+    });
+  }
+
+  // Clear all
+  function clearAll() {
+    document.getElementById('input').value = '';
+    document.getElementById('output').textContent = '// Your converted JSON will appear here...';
+    clearEditor();
+  }
+
+  // Show message helper
+  function showMessage(text, type) {
+    const copyMsg = document.getElementById('copyMsg');
+    copyMsg.textContent = text;
+
+    if (type === 'error') {
+      copyMsg.style.background = 'rgba(239, 68, 68, 0.1)';
+      copyMsg.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+      copyMsg.style.color = '#ef4444';
+    } else {
+      copyMsg.style.background = 'rgba(74, 222, 128, 0.1)';
+      copyMsg.style.borderColor = 'rgba(74, 222, 128, 0.3)';
+      copyMsg.style.color = '#4ade80';
+    }
+
+    copyMsg.style.display = 'block';
+    setTimeout(() => {
+      copyMsg.style.display = 'none';
+    }, 3000);
+  }
+
+  // Initialize on page load
+  window.onload = function() {
+    initColorPicker('nameColorPicker', 'name');
+  };
+</script>
+</body>
+</html>
