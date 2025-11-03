@@ -474,9 +474,10 @@
       if (nameState.strikethrough) nameObj.strikethrough = true;
       if (nameState.obfuscated) nameObj.obfuscated = true;
 
-      // Convert to JSON and escape for NBT string (double escape for JSON)
+      // Convert to JSON and escape for NBT string
+      // First escape backslashes, then double quotes, then single quotes with double backslash
       const jsonStr = JSON.stringify(nameObj);
-      nameString = jsonStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      nameString = jsonStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\\\'");
     }
 
     // Build lore array
@@ -501,9 +502,10 @@
         if (state.strikethrough) loreObj.strikethrough = true;
         if (state.obfuscated) loreObj.obfuscated = true;
 
-        // Convert to JSON and escape for NBT string (double escape for JSON)
+        // Convert to JSON and escape for NBT string
+        // First escape backslashes, then double quotes, then single quotes with double backslash
         const jsonStr = JSON.stringify(loreObj);
-        const escapedStr = jsonStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const escapedStr = jsonStr.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\\\'");
         loreArray.push(`'${escapedStr}'`);
       }
     });
