@@ -16,10 +16,12 @@
   <div class="header">
     <div class="header-content">
       <div class="logo">
-        <img src="logo.png" alt="EntityLootDrops Logo">
+        <img src="logo_entitylootdrops.png" alt="EntityLootDrops Logo">
+        <img src="logo_entityblockdrops.png" alt="EntityLootDrops Logo">
+        <img src="logo_entityfishingdrops.png" alt="EntityLootDrops Logo">
       </div>
-      <h1>EntityLootDrops</h1>
-      <p class="subtitle">NBT Command → Item JSON Converter</p>
+      <h1>NBTData JSON Converter</h1>
+      <p class="subtitle"> </p>
       <span class="mod-badge">
         <img src="logo_poe.png" alt="Icon" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 5px;">
         Created By Poe
@@ -151,6 +153,18 @@
       4. Use <strong>Copy Output</strong> to copy the result to your clipboard
     </p>
   </div>
+</div>
+
+<!-- Changelog Section -->
+<div class="info-section">
+  <h3>📋 Change Log</h3>
+  <p>
+    <strong>Version 1.4</strong><br>
+    - Added support for multiple name segments with individual colors and formatting<br>
+    - Improved color picker integration with Pickr for custom hex colors<br>
+    - Enhanced preview functionality to show combined name segments<br>
+    - Fixed various bugs and improved overall stability<br><br>
+  </p>
 </div>
 
 <!-- Pickr Color Picker JS -->
@@ -452,7 +466,7 @@
         <div class="editor-toolbar">
           <div class="color-picker-wrapper" id="nameColorPicker-${id}"></div>
           <div class="custom-color-wrapper">
-            <span class="custom-color-label">Custom Color:</span>
+            <span class="custom-color-label">Custom:</span>
             <div class="pickr" id="namePickr-${id}"></div>
           </div>
           <button class="format-btn" data-format="bold" onclick="toggleFormat('name', 'bold', ${id})">B</button>
