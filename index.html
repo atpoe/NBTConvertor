@@ -6,6 +6,8 @@
   <title>EntityLootDrops - NBT Converter</title>
   <link rel="icon" href="logo_poe.png" type="image/png">
   <link rel="stylesheet" href="styles.css">
+  <!-- Pickr Color Picker CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
 </head>
 <body>
 
@@ -19,9 +21,9 @@
       <h1>EntityLootDrops</h1>
       <p class="subtitle">NBT Command → Item JSON Converter</p>
       <span class="mod-badge">
-  <img src="logo_poe.png" alt="Icon" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 5px;">
-  Created By Poe
-</span>
+        <img src="logo_poe.png" alt="Icon" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 5px;">
+        Created By Poe
+      </span>
     </div>
   </div>
 
@@ -136,7 +138,7 @@
     <p>
       <strong>Visual Editor Mode:</strong><br>
       1. Add name segments with individual colors and formatting (creates multi-colored names)<br>
-      2. Click preset colors or use the custom color picker for hex colors<br>
+      2. Click preset colors or use the advanced color picker (🎨) for custom hex colors<br>
       3. Add lore lines with individual formatting for each line<br>
       4. Add enchantments using the dropdown menus<br>
       5. Click <strong>Generate NBT</strong> to create the NBT data<br><br>
@@ -150,6 +152,9 @@
     </p>
   </div>
 </div>
+
+<!-- Pickr Color Picker JS -->
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 
 <script>
   // Minecraft enchantments list
@@ -224,6 +229,9 @@
     lore: {}
   };
 
+  // Store Pickr instances
+  const pickrInstances = {};
+
   // Initialize color pickers
   function initColorPicker(containerId, type, id) {
     const container = document.getElementById(containerId);
@@ -246,6 +254,47 @@
     });
   }
 
+  // Initialize Pickr color picker
+  function initPickr(type, id) {
+    const pickrId = `${type}Pickr-${id}`;
+    const pickrElement = document.getElementById(pickrId);
+
+    if (!pickrElement) return;
+
+    // Get current color
+    const state = textState[type][id];
+    let defaultColor = state.customColor || minecraftColors[state.color] || '#FFFFFF';
+
+    // Create Pickr instance without swatches
+    const pickr = Pickr.create({
+      el: pickrElement,
+      theme: 'nano',
+      default: defaultColor,
+      components: {
+        preview: true,
+        opacity: false,
+        hue: true,
+        interaction: {
+          hex: true,
+          input: true,
+          save: true
+        }
+      }
+    });
+
+    // Handle color selection
+    pickr.on('save', (color) => {
+      if (color) {
+        const hexColor = color.toHEXA().toString();
+        selectCustomColor(type, hexColor, id);
+        pickr.hide();
+      }
+    });
+
+    // Store instance
+    pickrInstances[pickrId] = pickr;
+  }
+
   // Select color
   function selectColor(type, color, id) {
     if (!textState[type][id]) {
@@ -254,6 +303,13 @@
     textState[type][id].color = color;
     textState[type][id].customColor = null;
     initColorPicker(`${type}ColorPicker-${id}`, type, id);
+
+    // Update Pickr color
+    const pickrId = `${type}Pickr-${id}`;
+    if (pickrInstances[pickrId]) {
+      pickrInstances[pickrId].setColor(minecraftColors[color]);
+    }
+
     updatePreview(type, id);
   }
 
@@ -395,9 +451,9 @@
       <div class="text-editor">
         <div class="editor-toolbar">
           <div class="color-picker-wrapper" id="nameColorPicker-${id}"></div>
-          <div class="custom-color-picker">
-            <label>Custom:</label>
-            <input type="color" id="nameCustomColor-${id}" value="#FFFFFF" onchange="selectCustomColor('name', this.value, ${id})">
+          <div class="custom-color-wrapper">
+            <span class="custom-color-label">Custom Color:</span>
+            <div class="pickr" id="namePickr-${id}"></div>
           </div>
           <button class="format-btn" data-format="bold" onclick="toggleFormat('name', 'bold', ${id})">B</button>
           <button class="format-btn" data-format="italic" onclick="toggleFormat('name', 'italic', ${id})">I</button>
@@ -412,10 +468,20 @@
     `;
     list.appendChild(item);
     initColorPicker(`nameColorPicker-${id}`, 'name', id);
+
+    // Initialize Pickr after DOM is ready
+    setTimeout(() => initPickr('name', id), 0);
   }
 
   // Remove name segment
   function removeNameSegment(id) {
+    // Destroy Pickr instance
+    const pickrId = `namePickr-${id}`;
+    if (pickrInstances[pickrId]) {
+      pickrInstances[pickrId].destroyAndRemove();
+      delete pickrInstances[pickrId];
+    }
+
     document.getElementById(`name-${id}`).remove();
     delete textState.name[id];
     updateFullNamePreview();
@@ -456,9 +522,9 @@
       <div class="text-editor">
         <div class="editor-toolbar">
           <div class="color-picker-wrapper" id="loreColorPicker-${id}"></div>
-          <div class="custom-color-picker">
-            <label>Custom:</label>
-            <input type="color" id="loreCustomColor-${id}" value="#AAAAAA" onchange="selectCustomColor('lore', this.value, ${id})">
+          <div class="custom-color-wrapper">
+            <span class="custom-color-label">Custom Color:</span>
+            <div class="pickr" id="lorePickr-${id}"></div>
           </div>
           <button class="format-btn" data-format="bold" onclick="toggleFormat('lore', 'bold', ${id})">B</button>
           <button class="format-btn" data-format="italic" onclick="toggleFormat('lore', 'italic', ${id})">I</button>
@@ -473,10 +539,20 @@
     `;
     list.appendChild(item);
     initColorPicker(`loreColorPicker-${id}`, 'lore', id);
+
+    // Initialize Pickr after DOM is ready
+    setTimeout(() => initPickr('lore', id), 0);
   }
 
   // Remove lore line
   function removeLoreLine(id) {
+    // Destroy Pickr instance
+    const pickrId = `lorePickr-${id}`;
+    if (pickrInstances[pickrId]) {
+      pickrInstances[pickrId].destroyAndRemove();
+      delete pickrInstances[pickrId];
+    }
+
     document.getElementById(`lore-${id}`).remove();
     delete textState.lore[id];
   }
@@ -611,6 +687,14 @@
     document.getElementById('enchantmentList').innerHTML = '';
     document.getElementById('customModelData').value = '';
     document.getElementById('unbreakable').value = '';
+
+    // Destroy all Pickr instances
+    Object.keys(pickrInstances).forEach(key => {
+      if (pickrInstances[key]) {
+        pickrInstances[key].destroyAndRemove();
+        delete pickrInstances[key];
+      }
+    });
 
     textState.name = {};
     textState.lore = {};
